@@ -1,0 +1,26 @@
+2025-03-09 15:07:11.516 [info] [main] Log level: Info
+2025-03-09 15:07:11.516 [info] [main] Validating found git in: "git"
+2025-03-09 15:07:11.516 [info] [main] Using git "2.34.1" from "git"
+2025-03-09 15:07:11.516 [info] [Model][doInitialScan] Initial repository scan started
+2025-03-09 15:07:11.516 [info] > git rev-parse --show-toplevel [2ms]
+2025-03-09 15:07:11.516 [info] fatal: not a git repository (or any parent up to mount point /home)
+Stopping at filesystem boundary (GIT_DISCOVERY_ACROSS_FILESYSTEM not set).
+2025-03-09 15:07:11.516 [info] > git rev-parse --show-toplevel [6ms]
+2025-03-09 15:07:11.516 [info] fatal: not a git repository (or any parent up to mount point /home)
+Stopping at filesystem boundary (GIT_DISCOVERY_ACROSS_FILESYSTEM not set).
+2025-03-09 15:07:11.516 [info] > git rev-parse --show-toplevel [1ms]
+2025-03-09 15:07:11.516 [info] fatal: not a git repository (or any parent up to mount point /home)
+Stopping at filesystem boundary (GIT_DISCOVERY_ACROSS_FILESYSTEM not set).
+2025-03-09 15:07:11.516 [info] > git rev-parse --show-toplevel [2ms]
+2025-03-09 15:07:11.516 [info] fatal: not a git repository (or any parent up to mount point /home)
+Stopping at filesystem boundary (GIT_DISCOVERY_ACROSS_FILESYSTEM not set).
+2025-03-09 15:07:11.517 [info] > git rev-parse --show-toplevel [3ms]
+2025-03-09 15:07:11.517 [info] fatal: not a git repository (or any parent up to mount point /home)
+Stopping at filesystem boundary (GIT_DISCOVERY_ACROSS_FILESYSTEM not set).
+2025-03-09 15:07:11.520 [info] [Model][doInitialScan] Initial repository scan completed - repositories (0), closed repositories (0), parent repositories (0), unsafe repositories (0)
+2025-03-09 15:07:11.590 [info] > git rev-parse --show-toplevel [0ms]
+2025-03-09 15:07:11.590 [info] fatal: not a git repository (or any parent up to mount point /home)
+Stopping at filesystem boundary (GIT_DISCOVERY_ACROSS_FILESYSTEM not set).
+2025-03-09 15:07:12.904 [info] > git rev-parse --show-toplevel [1ms]
+2025-03-09 15:07:12.904 [info] fatal: not a git repository (or any parent up to mount point /home)
+Stopping at filesystem boundary (GIT_DISCOVERY_ACROSS_FILESYSTEM not set).
