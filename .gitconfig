@@ -1,5 +1,0 @@
-[user]
-	email = kazuho.kobayashi.ynu@gmail.com
-	name = kazuho hm desktop
-[credential]
-	helper = "!f() { /home/mujin/.vscode-server/bin/e54c774e0add60467559eb0d1e229c6452cf8447/node /tmp/vscode-remote-containers-84188636-3050-4f9c-a773-a3af7a5e59bb.js git-credential-helper $*; }; f"
