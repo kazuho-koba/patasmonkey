@@ -21,3 +21,8 @@ __pycache__/
 .DS_Store
 .bash_history
 Thumbs.db
+
+# ROS2のビルド・ログ関連（Git管理不要）
+build/
+install/
+log/
