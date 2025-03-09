@@ -1,6 +1,7 @@
 # 一般的な隠しファイル・ディレクトリ
 .*
 !.gitignore  # .gitignore は除外しない
+!.gitkeep
 # !.github  # GitHubの設定フォルダは必要なら残す
 
 # キャッシュや開発環境の設定ファイル
