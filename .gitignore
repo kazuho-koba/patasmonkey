@@ -1,0 +1,23 @@
+# 一般的な隠しファイル・ディレクトリ
+.*
+!.gitignore  # .gitignore は除外しない
+# !.github  # GitHubの設定フォルダは必要なら残す
+
+# キャッシュや開発環境の設定ファイル
+.cache/
+.vscode/
+.vscode-server/
+.idea/
+__pycache__/
+*.swp  # Vimの一時ファイル
+*.swo
+.gitconfig
+
+# SSHや認証情報（重要！）
+.ssh/
+.gnupg/
+
+# OSやエディタの不要ファイル
+.DS_Store
+.bash_history
+Thumbs.db
