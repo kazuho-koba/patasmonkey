@@ -1,0 +1,6 @@
+joy_node:
+  ros__parameters:
+    device_id: 0  # `/dev/input/js0` を使用
+    deadzone: 0.05
+    autorepeat_rate: 20.0
+    coalesce_interval_ms: 1

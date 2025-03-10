@@ -1,0 +1,20 @@
+teleop_twist_joy_node:
+  ros__parameters:
+    require_enable_button: true  # if true, do not work unless you push a particular button.
+    enable_button: 1  # enable if you push this button (default: 0 -> always enabled)
+    
+    axis_linear:
+      x: 1  # assign forward/backward of left stick to linear.x
+    scale_linear:
+      x: 0.5  # max speed 0.5 m/s
+    scale_linear_turbo:
+      x: 1.0  # max speed at turbo mode 1.0 m/s
+
+    axis_angular:
+      yaw: 0  # assign left/right of left stick to angular.z
+    scale_angular:
+      yaw: 1.0  # max yaw rate 1.0 rad/s
+    scale_angular_turbo:
+      yaw: 2.0  # max yaw rate at turbo mode 2.0 rad/s
+
+    enable_turbo_button: 4  # button for turbo mode (L1 button)
