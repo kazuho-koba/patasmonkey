@@ -1,5 +1,4 @@
 from setuptools import find_packages, setup
-import os
 import glob
 
 package_name = 'patasmonkey_teleop'
@@ -15,13 +14,12 @@ setup(
         ('share/' + package_name + '/launch', glob.glob('launch/*.launch.py')),
         ('share/' + package_name + '/config', glob.glob('config/*.yaml')),
     ],
-    install_requires=['setuptools'],
+    install_requires=['setuptools', 'pytest'],
     zip_safe=True,
     maintainer='mujin',
     maintainer_email='kazuho.kobayashi.ynu@gmail.com',
     description='TODO: Package description',
-    license='TODO: License declaration',
-    tests_require=['pytest'],
+    license='MIT',
     entry_points={
         'console_scripts': [
         ],
