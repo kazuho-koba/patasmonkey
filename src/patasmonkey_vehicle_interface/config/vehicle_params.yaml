@@ -1,0 +1,6 @@
+vehicle_interface:
+  ros__parameters:
+    wheel_radius: 0.05  # 車輪半径 [m]
+    wheel_base: 0.3  # 車輪間の幅 [m]
+    max_motor_rpm: 3000  # 最大モータ回転数 [rpm]
+    odrive_uart_port: "/dev/ttyUSB0"  # ODrive のポート
