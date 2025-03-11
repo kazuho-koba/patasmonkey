@@ -6,9 +6,9 @@ teleop_twist_joy_node:
     axis_linear:
       x: 1  # assign forward/backward of left stick to linear.x
     scale_linear:
-      x: 0.5  # max speed 0.5 m/s
+      x: 1.0  # max speed 0.5 m/s
     scale_linear_turbo:
-      x: 1.0  # max speed at turbo mode 1.0 m/s
+      x: 2.0  # max speed at turbo mode 1.0 m/s
 
     axis_angular:
       yaw: 0  # assign left/right of left stick to angular.z
