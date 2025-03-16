@@ -8,7 +8,7 @@ class ODriveUtils:
     def find_odrive():
         """Search for an ODrive device and return the instance."""
         print("Searching for ODrive...")
-        odrv = odrive.find_any()
+        odrv = odrive.find_any(timeout=1)
         if odrv is None:
             raise Exception("ODrive not found!")
         print(f"ODrive connected! Voltage: {odrv.vbus_voltage:.2f}V")

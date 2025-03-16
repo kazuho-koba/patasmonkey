@@ -6,7 +6,6 @@ from odrive.enums import (
     AXIS_STATE_IDLE,
     INPUT_MODE_VEL_RAMP,
 )
-import multiprocessing
 
 
 class MotorController:
@@ -16,21 +15,10 @@ class MotorController:
         :param axis_index: 0 (left motor) or 1 (right motor)
         """
         self.axis_index = axis_index
-        
-        # Run ODrive initialization in a separate process
-        self.init_process = multiprocessing.Process(target=self.init_odrive)
-        self.init_process.start()
-        self.init_process.join()  # Wait for the process to complete
-        self.init_process.terminate()  # Ensure the process is terminated
-
-    def init_odrive(self):
-        """ ODrive initialization process in a separate thread """
-        print(f"[Motor {self.axis_index}] Searching for ODrive...")
-        self.odrive = ODriveUtils.find_odrive()  # This might block
-        ODriveUtils.clear_odrive_errors(self.odrive)
+        self.odrive = ODriveUtils.find_odrive()  # Find and connect to ODrive
+        ODriveUtils.clear_odrive_errors(self.odrive)  # Clear errors on startup
         self.axis = self.select_axis()
         self.init_motor()
-        print(f"[Motor {self.axis_index}] Initialized in velocity control mode.")
 
     def select_axis(self):
         """Select the ODrive axis based on the index."""
