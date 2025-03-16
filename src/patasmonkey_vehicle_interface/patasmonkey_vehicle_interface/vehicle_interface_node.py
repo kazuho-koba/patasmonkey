@@ -1,10 +1,57 @@
 import rclpy
 from rclpy.node import Node
+from rclpy.executors import SingleThreadedExecutor
 from geometry_msgs.msg import Twist
 from std_msgs.msg import Bool, Float32MultiArray
-from .odrive_controller import MotorController
+import odrive
+from odrive.enums import (
+    AXIS_STATE_CLOSED_LOOP_CONTROL,
+    CONTROL_MODE_VELOCITY_CONTROL,
+    INPUT_MODE_PASSTHROUGH,
+    AXIS_STATE_IDLE,
+    INPUT_MODE_VEL_RAMP,
+)
+import time
+import threading
 import math
 import sys
+
+
+# def initialize_odrive(queue):
+#     """ ODrive の初期化を `rclpy.init()` の前に独立プロセスで実行 """
+#     print("[ODrive Init] Connecting to ODrive...")
+#     odrv0 = odrive.find_any(timeout=3)  # ODrive を探す
+#     if odrv0 is None:
+#         print("[ODrive Init] ODrive connection failed!")
+#         queue.put(None)
+#         return
+
+#     odrv0.clear_errors()  # エラーをクリア
+#     print("[ODrive Init] ODrive connected!")
+
+#     # ODrive 設定
+#     odrv0.axis0.requested_state = AXIS_STATE_CLOSED_LOOP_CONTROL
+#     odrv0.axis0.controller.config.control_mode = CONTROL_MODE_VELOCITY_CONTROL
+#     odrv0.axis0.controller.config.vel_ramp_rate = 5
+#     odrv0.axis0.controller.config.input_mode = INPUT_MODE_VEL_RAMP
+#     odrv0.axis0.controller.config.pos_gain = 20
+#     odrv0.axis0.controller.config.vel_gain = 0.3
+#     odrv0.axis0.controller.config.vel_integrator_gain = 0.32
+#     odrv0.axis0.controller.config.vel_integrator_limit = 1
+#     print(odrv0.axis0.controller.config.vel_integrator_limit)
+
+#     odrv0.axis1.requested_state = AXIS_STATE_CLOSED_LOOP_CONTROL
+#     odrv0.axis1.controller.config.control_mode = CONTROL_MODE_VELOCITY_CONTROL
+#     odrv0.axis1.controller.config.vel_ramp_rate = 5
+#     odrv0.axis1.controller.config.input_mode = INPUT_MODE_VEL_RAMP
+#     odrv0.axis1.controller.config.pos_gain = 20
+#     odrv0.axis1.controller.config.vel_gain = 0.3
+#     odrv0.axis1.controller.config.vel_integrator_gain = 0.32
+#     odrv0.axis1.controller.config.vel_integrator_limit = 1
+#     print(odrv0.axis1.controller.config.vel_integrator_limit)
+
+#     # 初期化が成功した ODrive インスタンスをキューに渡す
+#     queue.put(odrv0)
 
 
 class VehicleInterfaceNode(Node):
@@ -43,11 +90,10 @@ class VehicleInterfaceNode(Node):
             "emergency_stop_topic", "/emergency_stop"
         )
 
-        # connect to odrive
-        self.get_logger().info("connecting to ODrive...")
-        self.left_motor = MotorController(self.mtr_axis_l)
-        self.right_motor = MotorController(self.mtr_axis_r)
-        self.get_logger().info("ODrive connected!")
+        # ODrive の初期化フラグ
+        self.odrive_ready = threading.Event()
+        # ODrive ステータス監視用のタイマー
+        self.timer = self.create_timer(0.5, self.check_odrive_status)
 
         # subscriber config
         self.create_subscription(Twist, self.cmd_vel_topic, self.cmd_vel_callback, 10)
@@ -62,6 +108,49 @@ class VehicleInterfaceNode(Node):
         self.motor_cmd_pub = self.create_publisher(
             Float32MultiArray, self.mtr_output_topic, 10
         )
+
+
+    def initialize_odrive(self):
+        """ ODrive の初期化をバックグラウンドスレッドで非同期実行 """
+        self.get_logger().info("Connecting to ODrive...")
+        odrv0 = odrive.find_any(timeout=5)  # ODrive を探す
+
+        if odrv0 is None:
+            self.get_logger().error("ODrive connection failed! Exiting...")
+            sys.exit(1)
+
+        odrv0.clear_errors()
+        self.get_logger().info("ODrive connected!")
+
+        self.left_motor = odrv0.axis0
+        self.right_motor = odrv0.axis1
+
+        # ODrive の設定を別スレッドで確実に実行
+        self.set_control_thread = threading.Thread(target=self.set_control_mode, daemon=True)
+        self.set_control_thread.start()
+        self.get_logger().info("ODrive configured!")
+
+    
+    def check_odrive_status(self):
+        """ ODrive の状態を監視する (0.5秒ごとに実行) """
+        if self.odrive_ready:
+            self.get_logger().info("ODrive is operational.")
+
+
+    def set_control_mode(self):
+        # set left motor to ramped velocity control mode
+        self.left_motor.requested_state = AXIS_STATE_CLOSED_LOOP_CONTROL
+        self.left_motor.controller.config.control_mode = CONTROL_MODE_VELOCITY_CONTROL
+        self.left_motor.controller.config.vel_ramp_rate = 5
+        self.left_motor.controller.config.input_mode = INPUT_MODE_VEL_RAMP
+        self.left_motor.controller.config.pos_gain = 20
+        self.left_motor.controller.config.vel_gain = 0.3
+        self.left_motor.controller.config.vel_integrator_gain = 0.32
+        print(self.left_motor.controller.config.vel_integrator_limit)
+        self.left_motor.controller.config.vel_integrator_limit = 2
+        print(self.left_motor.controller.config.vel_integrator_limit)
+        # **設定完了フラグをセット**
+        self.odrive_ready.set()
 
     def cmd_vel_callback(self, msg):
         """convert cmd_vel to motor speed and send to ODrive"""
@@ -98,20 +187,38 @@ class VehicleInterfaceNode(Node):
             self.get_logger().warn("Emergency STOP activated!")
 
 
+
 def main(args=None):
-    rclpy.init(args=args)  # Initialize ROS2
-    node = VehicleInterfaceNode()  # Create node instance
+    """ ODrive 初期化後に ROS2 を起動 """
+
+    rclpy.init(args=args)  # **ROS2 の初期化**
+    node = VehicleInterfaceNode()  # **ROS2 ノードを起動**
+    executor = SingleThreadedExecutor()  # **シングルスレッドのエグゼキュータを使用**
+    executor.add_node(node)
+
+    # **ODrive の初期化を待機しながら spin_once() を実行**
+    node.get_logger().info("Waiting for ODrive initialization...")
+
+    timeout = 10  # 最大待機時間 (秒)
+    start_time = time.time()
+
+    while not node.odrive_ready.is_set():
+        executor.spin_once(timeout_sec=0.1)  # **ROS2のイベント処理を適宜回しながら待機**
+        
+        if time.time() - start_time > timeout:
+            node.get_logger().error("ODrive initialization timed out! Exiting...")
+            sys.exit(1)
+
+    node.get_logger().info("ODrive is ready. Starting ROS2 loop...")
 
     try:
-        rclpy.spin(node)  # Keep node running
+        executor.spin()  # **通常のイベントループを回す**
     except KeyboardInterrupt:
-        node.get_logger().info("Shutting down gracefully...")  # Log clean shutdown
+        node.get_logger().info("Shutting down gracefully...")
     finally:
-        if rclpy.ok():  # Prevent multiple shutdown calls
-            node.destroy_node()  # Destroy node properly
-            rclpy.shutdown()  # Shutdown ROS2 cleanly
-        sys.exit(0)  # Exit without error
-
+        node.destroy_node()
+        rclpy.shutdown()
+        sys.exit(0)
 
 if __name__ == "__main__":
     main()
