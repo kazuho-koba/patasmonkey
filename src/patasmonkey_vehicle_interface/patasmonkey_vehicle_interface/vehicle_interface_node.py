@@ -2,6 +2,7 @@ import rclpy
 from rclpy.node import Node
 from geometry_msgs.msg import Twist
 from std_msgs.msg import Bool, Float32MultiArray
+from std_srvs.srv import Trigger
 from .odrive_controller import MotorController
 import math
 import sys
@@ -43,12 +44,12 @@ class VehicleInterfaceNode(Node):
             "emergency_stop_topic", "/emergency_stop"
         )
 
-        # connect to odrive
-        self.get_logger().info("connecting to ODrive...")
-        self.left_motor = MotorController(self.mtr_axis_l)
-        self.right_motor = MotorController(self.mtr_axis_r)
-        self.get_logger().info("ODrive connected!")
-
+        # initialization for odrive (pending till service)
+        self.left_motor = None
+        self.right_motor = None
+        self.init_service = self.create_service(Trigger, "/initialize_odrive", self.initialize_odrive_callback)
+        self.get_logger().info("vehicle interface node is ready. call /initialize_odrive to init ODrive.")
+        
         # subscriber config
         self.create_subscription(Twist, self.cmd_vel_topic, self.cmd_vel_callback, 10)
         self.create_subscription(
@@ -62,6 +63,24 @@ class VehicleInterfaceNode(Node):
         self.motor_cmd_pub = self.create_publisher(
             Float32MultiArray, self.mtr_output_topic, 10
         )
+
+    def initialize_odrive_callback(self, request, response):
+        """initialize ODrive when the service is called"""
+        try:
+            self.get_logger().info("Initializing ODrive...")
+            self.left_motor = MotorController(axis_index=0)
+            self.right_motor = MotorController(axis_index=1)
+            self.get_logger().info("ODrive initialized successfully.")
+
+            response.success = True
+            response.message = "ODrive initialized successfully."
+
+        except Exception as e:
+            self.get_logger().error(f"Failed to initialize ODrive: {e}")
+            response.success = False
+            response.message = f"Failed to initialize ODrive: {e}"
+        
+        return response
 
     def cmd_vel_callback(self, msg):
         """convert cmd_vel to motor speed and send to ODrive"""
