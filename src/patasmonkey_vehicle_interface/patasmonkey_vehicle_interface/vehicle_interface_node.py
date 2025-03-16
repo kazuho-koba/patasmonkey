@@ -22,9 +22,7 @@ class VehicleInterfaceNode(Node):
         )  # max wheel velocity [rps]
 
         # get odrive config
-        self.odrv_usb_port = self.get_parameter_or(
-            "odrv_usb_port", "/dev/ttyACM0"
-        )
+        self.odrv_usb_port = self.get_parameter_or("odrv_usb_port", "/dev/ttyACM0")
         self.odrv_baud_rate = self.get_parameter_or("odrv_baud_rate", 115200)
 
         # odrive axis
@@ -36,9 +34,7 @@ class VehicleInterfaceNode(Node):
         self.cmd_vel_joy_topic = self.get_parameter_or(
             "cmd_vel_joy_topic", "/cmd_vel_joy"
         )
-        self.mtr_output_topic = self.get_parameter_or(
-            "mtr_output_topic", "/motor_cmd"
-        )
+        self.mtr_output_topic = self.get_parameter_or("mtr_output_topic", "/motor_cmd")
         self.emergency_stop_topic = self.get_parameter_or(
             "emergency_stop_topic", "/emergency_stop"
         )

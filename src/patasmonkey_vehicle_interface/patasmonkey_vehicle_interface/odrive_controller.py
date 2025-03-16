@@ -16,10 +16,45 @@ class MotorController:
         :param axis_index: 0 (left motor) or 1 (right motor)
         """
         self.axis_index = axis_index
-        self.odrive = ODriveUtils.find_odrive()  # Find and connect to ODrive
-        ODriveUtils.clear_odrive_errors(self.odrive)  # Clear errors on startup
-        self.axis = self.select_axis()
-        self.init_motor()
+        self.shared_data = multiprocessing.Manager().dict()  # create shared dictionary
+
+        # run ODrive init in a separate process
+        self.init_process = multiprocessing.Process(
+            target=self.init_odrive, args=(self.shared_data,)
+        )
+        self.init_process.start()
+        self.init_process.join()  # wait for the process to complete
+
+        # retrieve ODrive instances from shared memory
+        self.odrive = self.shared_data.get("odrive", None)
+        self.axis = self.shared_data.get("axis", None)
+        if self.odrive is None or self.axis is None:
+            raise RuntimeError(f"Motor {self.axis_index}: Failed to initialize ODrive!")
+
+        # terminate the process
+        self.init_process.terminate()
+
+    def init_odrive(self, shared_data):
+        """ODrive initialization process in a separate process"""
+        print(f"[Motor {self.axis_index}] searching for ODrive...")
+        odrv = ODriveUtils.find_odrive()
+        ODriveUtils.clear_odrive_errors(odrv)
+        axis = odrv.axis0 if self.axis_index == 0 else odrv.axis1
+
+        # initialize motor as ramped velocity control mode
+        axis.requested_state = AXIS_STATE_CLOSED_LOOP_CONTROL
+        axis.controller.config.control_mode = CONTROL_MODE_VELOCITY_CONTROL
+        axis.controller.config.vel_ramp_rate = 5
+        axis.controller.config.input_mode = INPUT_MODE_VEL_RAMP
+        axis.controller.config.pos_gain = 20
+        axis.controller.config.vel_gain = 0.3
+        axis.controller.config.vel_integrator_gain = 0.32
+        axis.controller.config.vel_integrator_limit = 1
+
+        # pass ODrive instances to the parent process
+        shared_data["odrive"] = odrv
+        shared_data["axis"] = axis
+        print(f"[Motor {self.axis_index}] initialized in velocity control mode.")
 
     def select_axis(self):
         """Select the ODrive axis based on the index."""

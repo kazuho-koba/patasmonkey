@@ -21,13 +21,13 @@ def generate_launch_description():
     # Ensure clean shutdown on ROS2 shutdown
     shutdown_handler = RegisterEventHandler(
         event_handler=OnShutdown(
-            on_shutdown=[
-                vehicle_interface_node
-            ],
+            on_shutdown=[vehicle_interface_node],
         )
     )
 
-    return LaunchDescription([
-        vehicle_interface_node,
-        shutdown_handler,  # Ensure proper cleanup when the node exits
-    ])
+    return LaunchDescription(
+        [
+            vehicle_interface_node,
+            shutdown_handler,  # Ensure proper cleanup when the node exits
+        ]
+    )
