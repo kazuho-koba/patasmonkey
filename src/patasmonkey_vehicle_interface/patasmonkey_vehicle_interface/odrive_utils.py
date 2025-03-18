@@ -11,16 +11,16 @@ class ODriveUtils:
         odrv = odrive.find_any(timeout=1)
         if odrv is None:
             raise Exception("ODrive not found!")
-        print(f"ODrive connected! Voltage: {odrv.vbus_voltage:.2f}V")
+        print(f"ODrive connected! Voltage: {odrv.vbus_voltage:.2f}V", flush=True)
         return odrv
 
     @staticmethod
     def clear_odrive_errors(odrv):
         """Clear errors on the ODrive device."""
         try:
-            print("Clearing ODrive errors...")
+            print("Clearing ODrive errors...", flush=True)
             odrv.clear_errors()
-            print("Errors cleared.")
+            print("Errors cleared.", flush=True)
         except Exception as e:
             print(f"Error clearing ODrive: {e}")
 
@@ -28,7 +28,7 @@ class ODriveUtils:
     def check_odrive_errors(odrv):
         """Check and print ODrive error status."""
         try:
-            print("Checking ODrive errors...")
+            print("Checking ODrive errors...", flush=True)
             dump_errors(odrv, True)
         except Exception as e:
             print(f"Error checking ODrive: {e}")

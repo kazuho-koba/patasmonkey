@@ -39,19 +39,25 @@ class MotorController:
         self.axis.controller.config.vel_gain = 0.3
         self.axis.controller.config.vel_integrator_gain = 0.32
         self.axis.controller.config.vel_integrator_limit = 1
-        print(f"Motor {self.axis_index}: Initialized in velocity control mode.")
+        print(
+            f"Motor {self.axis_index}: Initialized in velocity control mode.",
+            flush=True,
+        )
 
     def get_velocity(self):
         """Get the current motor velocity [rps]."""
         vel = self.axis.encoder.vel_estimate
-        print(f"Motor {self.axis_index}: Current velocity = {vel:.2f} rps")
+        print(f"Motor {self.axis_index}: Current velocity = {vel:.2f} rps", flush=True)
         return vel
 
     def set_velocity(self, velocity):
         """Set target velocity [rps]."""
         try:
             self.axis.controller.input_vel = velocity
-            print(f"Motor {self.axis_index}: Velocity set to {velocity:.2f} rps.")
+            print(
+                f"Motor {self.axis_index}: Velocity set to {velocity:.2f} rps.",
+                flush=True,
+            )
         except Exception as e:
             print(f"Error setting velocity: {e}")
 
