@@ -39,12 +39,15 @@ class VehicleInterfaceNode(Node):
             "emergency_stop_topic", "/emergency_stop"
         )
 
+        # display the set parameters
+        self.print_parameters()
+
         # connect to odrive
         self.get_logger().info("connecting to ODrive...")
         self.left_motor = MotorController(self.mtr_axis_l)
         self.right_motor = MotorController(self.mtr_axis_r)
         self.get_logger().info("ODrive connected!")
-        self.left_motor.get_velocity()
+        # self.left_motor.get_velocity()
 
         # param definition related to subscriptions
         self.last_cmd_vel = None
@@ -60,7 +63,7 @@ class VehicleInterfaceNode(Node):
             Bool, self.emergency_stop_topic, self.emergency_stop_callback, 10
         )
         # timer for control loop
-        self.create_timer(0.1, self.command_selector)
+        self._timer = self.create_timer(0.1, self.command_selector)
 
         # publihser config
         self.motor_cmd_pub = self.create_publisher(
@@ -71,53 +74,62 @@ class VehicleInterfaceNode(Node):
         """callback function when /cmd_vel from autnomous driving software has been recieved"""
         self.last_cmd_vel = msg  # keep /cmd_vel_msg
         self.last_cmd_vel_time = (
-            self.get_clock().now
+            self.get_clock().now()
         )  # log the time when the msg received
 
     def cmd_vel_callback_joy(self, msg):
         """callback function when /cmd_vel from autnomous driving software has been recieved"""
         self.last_cmd_vel_joy = msg  # keep /cmd_vel_time_msg
         self.last_cmd_vel_joy_time = (
-            self.get_clock().now
+            self.get_clock().now()
         )  # log the time when the msg received
 
     def command_selector(self):
         """check which command should be prioritized, from gamepad or autonomous driving software"""
-        now = self.get_clock().now()
-        cmd = None
+        try:
+            now = self.get_clock().now()
+            cmd = None
 
-        # prioritize /cmd_vel_joy from gamepad
-        if self.last_cmd_vel_joy is not None:
-            # check the command's newness
-            if (now - self.last_cmd_vel_joy_time).nanoseconds < 0.3 * 1e9:
-                cmd = self.last_cmd_vel_joy
+            # prioritize /cmd_vel_joy from gamepad
+            if self.last_cmd_vel_joy is not None:
+                # check the command's newness
+                if (now - self.last_cmd_vel_joy_time).nanoseconds < 0.3 * 1e9:
+                    cmd = self.last_cmd_vel_joy
 
             # use /cmd_vel when no joy cmd received
-            elif cmd is None and self.last_cmd_vel is not None:
+            if cmd is None and self.last_cmd_vel is not None:
                 # check the command's newness
                 if (now - self.last_cmd_vel_time).nanoseconds < 0.3 * 1e9:
                     cmd = self.last_cmd_vel
 
-        # control motor:
-        self.motor_control(cmd)
+            # control motor:
+            self.motor_control(cmd)
+
+        except Exception as e:
+            self.get_logger().error(f"Exception in command_selector: {e}")
+
 
     def motor_control(self, cmd):
         """convert command to motor speed and send to ODrive"""
-        lin_x = cmd.linear.x  # velocity (forward/backward)
-        ang_z = cmd.angular.z  # velocity (turning)
-        whl_diam = self.whl_rad * 2 * math.pi  # wheel diameter
+        if cmd is not None:
+            lin_x = cmd.linear.x  # velocity (forward/backward)
+            ang_z = cmd.angular.z  # velocity (turning)
+            whl_diam = self.whl_rad * 2 * math.pi  # wheel diameter
 
-        # compute rps of L/R wheels
-        v_left = (lin_x - ang_z * self.whl_sep / 2) / whl_diam
-        v_right = (lin_x + ang_z * self.whl_sep / 2) / whl_diam
+            # compute rps of L/R wheels
+            v_left = (lin_x - ang_z * self.whl_sep / 2) / whl_diam
+            v_right = (lin_x + ang_z * self.whl_sep / 2) / whl_diam
 
-        # cap by max speed
-        v_left = max(min(v_left, self.max_whl_rps), -self.max_whl_rps)
-        v_right = max(min(v_right, self.max_whl_rps), -self.max_whl_rps)
+            # cap by max speed
+            v_left = max(min(v_left, self.max_whl_rps), -self.max_whl_rps)
+            v_right = max(min(v_right, self.max_whl_rps), -self.max_whl_rps)
 
-        # convert to motor rps
-        mtr_left_rps = v_left * self.gear_ratio
-        mtr_right_rps = v_right * self.gear_ratio
+            # convert to motor rps
+            mtr_left_rps = v_left * self.gear_ratio
+            mtr_right_rps = v_right * self.gear_ratio
+        else:
+            mtr_left_rps = 0.0
+            mtr_right_rps = 0.0
 
         # send command to ODrive
         self.left_motor.set_velocity(mtr_left_rps)
@@ -136,9 +148,31 @@ class VehicleInterfaceNode(Node):
             self.get_logger().warn("Emergency STOP activated!")
 
     def stop_motors(self):
+        """in case of emergency cases: motor stop"""
         self.left_motor.set_idle()
         self.right_motor.set_idle()
         self.get_logger().warn("No !")
+
+    def print_parameters(self):
+        header = f"{'Parameter':<20} {'Value':<20}"
+        separator = "-" * 42
+        lines = [header, separator]
+        for key, value in [
+            ("whl_rad", self.whl_rad),
+            ("whl_sep", self.whl_sep),
+            ("gear_ratio", self.gear_ratio),
+            ("max_whl_rps", self.max_whl_rps),
+            ("odrv_usb_port", self.odrv_usb_port),
+            ("odrv_baud_rate", self.odrv_baud_rate),
+            ("mtr_axis_l", self.mtr_axis_l),
+            ("mtr_axis_r", self.mtr_axis_r),
+            ("cmd_vel_topic", self.cmd_vel_topic),
+            ("cmd_vel_joy_topic", self.cmd_vel_joy_topic),
+            ("mtr_output_topic", self.mtr_output_topic),
+            ("emergency_stop_topic", self.emergency_stop_topic),
+        ]:
+            lines.append(f"{key:<20} {str(value):<20}")
+        self.get_logger().info("\n".join(lines))
 
 
 def main(args=None):

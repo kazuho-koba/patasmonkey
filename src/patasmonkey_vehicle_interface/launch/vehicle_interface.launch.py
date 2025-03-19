@@ -22,7 +22,6 @@ def generate_launch_description():
     shutdown_handler = RegisterEventHandler(
         event_handler=OnShutdown(
             on_shutdown=[
-                vehicle_interface_node
             ],
         )
     )
