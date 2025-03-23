@@ -69,6 +69,9 @@ class VehicleInterfaceNode(Node):
         self.motor_cmd_pub = self.create_publisher(
             Float32MultiArray, self.mtr_output_topic, 10
         )
+        self.sim_cmd_vel_pub = self.create_publisher(
+            Twist, "/sim_cmd_vel", 10
+        )
 
     def cmd_vel_callback(self, msg):
         """callback function when /cmd_vel from autnomous driving software has been recieved"""
@@ -127,9 +130,17 @@ class VehicleInterfaceNode(Node):
             # convert to motor rps
             mtr_left_rps = v_left * self.gear_ratio
             mtr_right_rps = v_right * self.gear_ratio
+
+            # publishe the equivalent Twist command for simulation
+            self.sim_cmd_vel_pub.publish(cmd)
+
         else:
             mtr_left_rps = 0.0
             mtr_right_rps = 0.0
+
+            # if the command is None, publihs it for simulation
+            zero_cmd = Twist()
+            self.sim_cmd_vel_pub.publish(zero_cmd)
 
         # send command to ODrive
         self.left_motor.set_velocity(mtr_left_rps)
